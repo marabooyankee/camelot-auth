@@ -6,6 +6,7 @@ use TwswebInt\CamelotAuth\Database\DatabaseInterface;
 
 use TwswebInt\CamelotAuth\Auth\Oauth2Client\AbstractOauth2Provider;
 
+use TwswebInt\CamelotAuth\Auth\Local\Exceptions\AccountNotActiveException;
 class Oauth2ClientAuth extends AbstractAuth{
 
 	/**
@@ -72,7 +73,7 @@ class Oauth2ClientAuth extends AbstractAuth{
 		//echo '<pre>';
 		//var_dump($userData);
 		// check to see if the oauth details match a db record
-		$oauthUser = $this->database->createModel('oauth2User');
+		$oauthUser = $this->database->createModel('oauth2User')->newQuery();
 		$user = $oauthUser->where('provider','=',$userData['provider'])
 				  ->where('user_id','=',$userData['user_id'])
 				  ->where('username','=',$userData['username'])
@@ -82,6 +83,11 @@ class Oauth2ClientAuth extends AbstractAuth{
 		// if true create a new session 
 		if(!is_null($user))
 		{
+			if(!$user->Account->isActive())
+			{
+				throw new AccountNotActiveException("This account is not active");
+			}
+
 			// update token 
 			return $this->createSession($user->Account);
 		}
