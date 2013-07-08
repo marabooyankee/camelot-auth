@@ -1,4 +1,4 @@
-<?php namespace T4s\CamelotAuth\Throteller
+<?php namespace T4s\CamelotAuth\Throteller;
 
 class CamelotThrottler implements ThrottleProviderInterface
 {
