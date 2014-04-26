@@ -57,7 +57,7 @@ class Camelot{
     protected $httpPath;
 
     /**
-     * Loaded Authentication Driver.
+     * Loaded Authentication Driver
      *
      * @var T4s\CamelotAuth\AuthDriver\CamelotDriver
      */
@@ -124,7 +124,7 @@ class Camelot{
         }
 
         $databaseDriver = $this->loadDatabaseDriver(ucfirst($driverName));
-        return $this->driver =  new $driverClass(
+        $this->driver =  new $driverClass(
                 $this->session,
                 $this->cookie,
                 $databaseDriver,
@@ -132,6 +132,13 @@ class Camelot{
                 $this->config,
                 $this->httpPath
                 );
+
+        if(isset($this->events))
+        {
+            $this->driver->setEventDispatcher($this->events);
+        }
+
+        return $this->driver;
     }
 
     public function __call($method,$params)
