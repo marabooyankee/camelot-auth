@@ -108,8 +108,9 @@ class LocalAuth extends AbstractAuth{
 
 				$localUser = $this->database->createModel('LocalUser')->findByAccountID($account->id);
 			}
-
-			if(crypt($credentials['password'], $localUser->password_hash) !== $localUser->password_hash)
+			//@fixme fix this to non laravel specific code later 
+			
+			if(!\Hash::check($credentials['password'],$localUser->password_hash)
 			{
 				if($this->throteller)
 				{
