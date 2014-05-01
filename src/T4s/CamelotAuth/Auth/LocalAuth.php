@@ -10,7 +10,8 @@ use T4s\CamelotAuth\Auth\Local\Exceptions\UserNotFoundException;
 use T4s\CamelotAuth\Auth\Local\Exceptions\PasswordRequiredException;
 use T4s\CamelotAuth\Auth\Local\Exceptions\PasswordIncorrectException;
 
-class LocalAuth extends AbstractAuth{
+class LocalAuth extends AbstractAuth
+{
 
     /**
      * The throttle provider
@@ -28,16 +29,16 @@ class LocalAuth extends AbstractAuth{
     protected $hasher;
 
 
-    public function __construct(SessionInterface $session,CookieInterface $cookie,DatabaseInterface $database,$providerName,array $config,$httpPath)
+    public function __construct(SessionInterface $session, CookieInterface $cookie, DatabaseInterface $database, $providerName, array $config, $httpPath)
     {
-        parent::__construct($session,$cookie,$database,$providerName,$config,$httpPath);
+        parent::__construct($session, $cookie, $database, $providerName, $config, $httpPath);
+
 
         //$this->loadHasher($this->settings['hasher']);
     }
 
-    public function authenticate(array $credentials = array(),$redirect_to = null,$remember = false, $login = true)
+    public function authenticate(array $credentials = array(), $redirect_to = null, $remember = false, $login = true)
     {
-
         // check that the required fields have been filled in
         // if not all required fields returned return logonFieldRequired exception
         // check if a throteller has been enabled
@@ -51,87 +52,72 @@ class LocalAuth extends AbstractAuth{
         // run createSession function to generate a new session
 
         // if the login attribute is sent then we are trying to login
-        if(isset($credentials['login'])){
+        if ($login) {
 
-            if($this->events)
-            {
-                $this->event->fire('camelot.auth.attempt',array_values(compact('credentials','remember','login')));
+            if ($this->events) {
+                $this->events->fire('camelot.auth.attempt', array_values(compact('credentials', 'remember', 'login')));
             }
 
             //check that the required fields have been filled in
-            if(!(isset($credentials['username'])|| isset($credentials['email'])))
-            {
+            if (!(isset($credentials['username']) || isset($credentials['email']))) {
                 throw new LoginRequiredException("username_required");
             }
-            if(!isset($credentials['password']))
-            {
+            if (!isset($credentials['password'])) {
                 throw new PasswordRequiredException('password_required.');
             }
 
             //check if a throteller has been enabled
-            if($this->throteller)
-            {
+            if ($this->throteller) {
                 // will throw an exception if user is susspeneded
                 $this->throteller->check($credentials);
             }
 
-
-            if(isset($credentials['username']))
-            {
+            if (isset($credentials['username'])) {
                 $query = $this->database->createModel('LocalUser')->newQuery();
-                $query->where('username','=',$credentials['username'])->with('account');
+                $query->where('username', '=', $credentials['username'])->with('account');
 
-                if(!$localUser = $query->first())
-                {
-                    if($this->throteller)
-                    {
+                if (!$localUser = $query->first()) {
+                    if ($this->throteller) {
                         $this->throteller->addLoginAttempt();
                     }
 
                     throw new UserNotFoundException("username_not_found");
                 }
-            }
-            else if(isset($credentials['email']))
-            {
+            } else if (isset($credentials['email'])) {
+
                 $query = $this->database->createModel('Account')->newQuery();
-                $query->where('email','=',$credentials['email']);
-                if(!$account = $query->first())
-                {
-                    if($this->throteller)
-                    {
+                $query->where('email', '=', $credentials['email']);
+                if (!$account = $query->first()) {
+                    if ($this->throteller) {
                         $this->throteller->addLoginAttempt();
                     }
 
                     throw new UserNotFoundException("email_not_found");
-                }
-
+                };
 
                 $localUser = $this->database->createModel('LocalUser')->findByAccountID($account->id);
             }
             //@fixme fix this to non laravel specific code later
 
-            if(!\Hash::check($credentials['password'],$localUser->password_hash))
-            {
-				if($this->throteller)
-                {
+            if (!\Hash::check($credentials['password'], $localUser->password_hash)) {
+
+
+                if ($this->throteller) {
                     $this->throteller->addLoginAttempt();
                 }
-            throw new PasswordIncorrectException("password_incorrect");
-        }
+                throw new PasswordIncorrectException("password_incorrect");
+            }
 
 
-
-            if(!$localUser->Account->isActive())
-            {
+            if (!$localUser->Account->isActive()) {
                 throw new AccountNotActiveException("account_not_active");
             }
 
-            if($this->events)
-            {
-                $this->event->fire('camelot.auth.login',array($localUser->Account,$remember));
+            if ($this->events) {
+                $this->events->fire('camelot.auth.login', array($localUser->Account, $remember));
             }
-            if($login){
-                $this->createSession($localUser->Account,$remember);
+            if ($login) {
+                $this->createSession($localUser->Account, $remember);
                 $this->redirect();
             }
             return true;
@@ -148,14 +134,13 @@ class LocalAuth extends AbstractAuth{
     public function forgotPassword($email)
     {
         $query = $this->database->createModel('Account')->newQuery();
-        $query->where('email','=',$email);
-        if(!$account = $query->first())
-        {
+        $query->where('email', '=', $email);
+        if (!$account = $query->first()) {
             throw new UserNotFoundException("email_not_found");
         }
     }
 
-    public function changePassword($oldPassword,$newPassword)
+    public function changePassword($oldPassword, $newPassword)
     {
 
     }
