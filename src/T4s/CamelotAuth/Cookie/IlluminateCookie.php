@@ -52,7 +52,7 @@ class IlluminateCookie implements CookieInterface
 		{
 			$key = $this->getKey();
 		}
-		$this->cookie = Cookie::forget($key);
+		$this->cookie = \Cookie::forget($key);
 	}
 
 	public function getCookie()
