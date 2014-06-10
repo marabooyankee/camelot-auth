@@ -3,6 +3,7 @@
 use Illuminate\Container\Container;
 use Illuminate\Cookie\CookieJar;
 use Symfony\Component\HttpFoundation\Cookie;
+use Illuminate\Http\Request;
 
 class IlluminateCookie implements CookieInterface
 {
@@ -12,10 +13,17 @@ class IlluminateCookie implements CookieInterface
 
 	protected $cookie;
 
-	public function __construct(CookieJar $cookieJar,$key = "camelot-auth-cookie")
+    	protected $request;
+	
+    	protected $version;
+
+	public function __construct(Request $request,CookieJar $cookieJar,$key = "camelot-auth")
 	{
 		$this->cookieJar = $cookieJar;
 		$this->key = $key;
+        	$this->request = $request;
+        	$app = app();
+        	$this->version = $app::VERSION;
 	}
 
 	public function getKey()
@@ -30,11 +38,13 @@ class IlluminateCookie implements CookieInterface
 			$key = $this->getKey();
 		}
 		$this->cookie = $this->cookieJar->make($key,$value,$minutes);
+		$this->cookieJar->queue($this->cookie);
 	}
 
 	public function forever($value)
 	{
 		$this->cookie = $this->cookieJar->forever($this->getKey(),$value);
+		$this->cookieJar->queue($this->cookie);
 	}
 
 	public function get($key= null)
@@ -43,7 +53,19 @@ class IlluminateCookie implements CookieInterface
 		{
 			$key = $this->getKey();
 		}
-		return \Cookie::get($key);
+		
+		$queuedCookies = $this->cookieJar->getQueuedCookies();
+		if(isset($queuedCookies[$key]))
+		{
+			return $queuedCookies[$key];
+		}
+
+        if($this->version < 4.1)
+        {
+            return $this->cookieJar->get($key);
+        }
+
+        return $this->request->cookie($key);
 	}
 
 	public function forget($key= null)
@@ -52,7 +74,8 @@ class IlluminateCookie implements CookieInterface
 		{
 			$key = $this->getKey();
 		}
-		$this->cookie = \Cookie::forget($key);
+		$this->cookie = $this->cookieJar->forget($key);
+		$this->cookieJar->queue($this->cookie);
 	}
 
 	public function getCookie()
